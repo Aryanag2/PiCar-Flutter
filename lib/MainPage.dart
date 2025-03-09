@@ -3,8 +3,6 @@ import 'package:flutter_blue_app/AppPage.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 import './ChatPage.dart';
-//import './ChatPage2.dart';
-
 
 class MainPage extends StatefulWidget {
   @override
@@ -12,10 +10,8 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPage extends State<MainPage> {
-
-
   bool connected = false;
-  BluetoothDevice _device;
+  late BluetoothDevice _device;
 
   @override
   void initState() {
@@ -25,15 +21,14 @@ class _MainPage extends State<MainPage> {
         .getBondedDevices()
         .then((List<BluetoothDevice> bondedDevices) {
       setState(() {
-        for(BluetoothDevice device in bondedDevices){
-          if (device.name == "raspberrypi"){
+        for (BluetoothDevice device in bondedDevices) {
+          if (device.name == "raspberrypi") {
             _device = device;
           }
         }
       });
     });
   }
-
 
   @override
   void dispose() {
@@ -45,16 +40,47 @@ class _MainPage extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat Demo'),
+        title: const Text('PiCar Control'),
       ),
       body: Container(
         child: ListView(
           children: <Widget>[
             Divider(),
-            ListTile(title: Text("Device: " + (_device == null? "..." : _device.name))),
+            ListTile(title: Text("Device: " + (_device?.name ?? "Not found"))),
             ListTile(
               title: ElevatedButton(
-                child: const Text('Start Chat'),
+                child: const Text('Control Car'),
+                onPressed: () async {
+                  if (_device != null) {
+                    print('Connect -> selected ' + _device.address);
+                    _startApp(context, _device);
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Error"),
+                          content: Text(
+                              "No Raspberry Pi device found. Make sure you have paired with the Pi first."),
+                          actions: [
+                            TextButton(
+                              child: Text("OK"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    print('Connect -> no device selected');
+                  }
+                },
+              ),
+            ),
+            ListTile(
+              title: ElevatedButton(
+                child: const Text('Chat Mode'),
                 onPressed: () async {
                   if (_device != null) {
                     print('Connect -> selected ' + _device.address);
@@ -70,6 +96,7 @@ class _MainPage extends State<MainPage> {
       ),
     );
   }
+
   void _startApp(BuildContext context, BluetoothDevice server) {
     Navigator.of(context).push(
       MaterialPageRoute(
